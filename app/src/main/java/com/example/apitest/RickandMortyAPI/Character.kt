@@ -1,6 +1,5 @@
 package com.example.apitest.RickandMortyAPI
 
-import android.icu.text.IDNA
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -14,7 +13,14 @@ data class Character(
     val image: String,
 )
 
+data class Info(
+    val count: Int,
+    val pages: Int,
+    val next: String?,
+    val prev: String?
+)
+
 data class CharacterResponse(
-    val info: IDNA.Info,
+    val info: Info,
     val results: List<Character>
 )

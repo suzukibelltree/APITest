@@ -18,7 +18,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             APITestTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val viewmodel = CharactersViewModel()
+                    val viewmodel = CharactersViewModel(
+                        application = application,
+                    )
                     CharactersScreen(
                         viewModel = viewmodel
                     )

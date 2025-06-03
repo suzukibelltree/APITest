@@ -1,32 +1,33 @@
 package com.example.apitest.RickandMortyAPI
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 
-sealed interface CharacterUiState {
-    data object Loading : CharacterUiState
-    data class Success(val characters: List<Character>) : CharacterUiState
-    data class Error(val message: String) : CharacterUiState
-}
+@OptIn(ExperimentalPagingApi::class)
+class CharactersViewModel(application: Application) : AndroidViewModel(application) {
 
-class CharactersViewModel : ViewModel() {
-    val _uiState = MutableStateFlow(CharacterUiState.Loading)
-    val uiState: Flow<CharacterUiState> = _uiState
+    private val database = AppDatabase.getDatabase(application)
+
     private val config = PagingConfig(
-        pageSize = 20, // ページごとのアイテム数
-        enablePlaceholders = false, // プレースホルダーを無効にする
-        initialLoadSize = 20, // 最初の読み込みで取得するデータ数
-        prefetchDistance = 5 // あらかじめデータを読み込む距離
+        pageSize = 20,
+        enablePlaceholders = true,
+        initialLoadSize = 20,
+        prefetchDistance = 5
     )
+
     val items: Flow<PagingData<Character>> = Pager(
         config = config,
-        pagingSourceFactory = { CharacterPagingSource(Retrofit.api) }
+        remoteMediator = CharacterRemoteMediator(
+            apiService = Retrofit.api,
+            database = database
+        ),
+        pagingSourceFactory = { database.characterDao().getAllCharacters() }
     ).flow.cachedIn(viewModelScope)
-
 }

@@ -20,24 +20,37 @@ class CharacterRemoteMediator(
         state: PagingState<Int, Character>
     ): MediatorResult {
         return try {
+
             val page = when (loadType) {
-                LoadType.REFRESH -> 1
-                LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true)
+                LoadType.REFRESH -> {
+                    1
+                }
+
+                LoadType.PREPEND -> {
+                    return MediatorResult.Success(endOfPaginationReached = true)
+                }
+
                 LoadType.APPEND -> {
                     val lastItem = state.lastItemOrNull()
+
                     if (lastItem == null) {
                         return MediatorResult.Success(endOfPaginationReached = true)
                     }
-                    remoteKeyDao.remoteKeysByCharacterId(lastItem.id)?.nextKey
-                        ?: return MediatorResult.Success(
-                            endOfPaginationReached = true
-                        )
+
+                    val remoteKey = remoteKeyDao.remoteKeysByCharacterId(lastItem.id)
+
+                    val nextKey = remoteKey?.nextKey
+
+                    if (nextKey == null) {
+                        return MediatorResult.Success(endOfPaginationReached = true)
+                    }
+                    nextKey
                 }
             }
 
-            val response = apiService.getCharacters(page).results
-            val characters = response
-            val endOfPaginationReached = response.isEmpty()
+            val response = apiService.getCharacters(page)
+            val characters = response.results
+            val endOfPaginationReached = response.info.next == null
 
             database.withTransaction {
                 if (loadType == LoadType.REFRESH) {
@@ -45,18 +58,16 @@ class CharacterRemoteMediator(
                     remoteKeyDao.clearRemoteKeys()
                 }
 
-                val keys = characters.map {
+                val keys = characters.map { character ->
                     RemoteKey(
-                        characterId = it.id,
+                        characterId = character.id,
                         prevKey = if (page == 1) null else page - 1,
                         nextKey = if (endOfPaginationReached) null else page + 1
                     )
                 }
 
                 remoteKeyDao.insertAll(keys)
-                characterDao.insertAllCharacters(
-                    characters
-                )
+                characterDao.insertAllCharacters(characters)
             }
 
             MediatorResult.Success(endOfPaginationReached = endOfPaginationReached)
@@ -64,5 +75,4 @@ class CharacterRemoteMediator(
             MediatorResult.Error(e)
         }
     }
-
 }
