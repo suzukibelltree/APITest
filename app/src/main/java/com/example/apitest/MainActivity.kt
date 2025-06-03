@@ -9,7 +9,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.example.apitest.RickandMortyAPI.CharactersScreen
 import com.example.apitest.RickandMortyAPI.CharactersViewModel
-import com.example.apitest.RickandMortyAPI.Retrofit
 import com.example.apitest.ui.theme.APITestTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,9 +18,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             APITestTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val viewmodel = CharactersViewModel(
-                        apiService = Retrofit.api
-                    )
+                    val viewmodel = CharactersViewModel()
                     CharactersScreen(
                         viewModel = viewmodel
                     )
